@@ -22,7 +22,7 @@ hex = { git = "https://github.com/mesalock-linux/rust-hex-sgx.git", default-feat
 byteorder = { git = "https://github.com/eduadiez/byteorder.git" }
 
 [dependencies]
-ff_derive_ce = { version = "0.5.1", path = "ff_derive", optional = true }
+ff_derive_ce = { version = "0.6", path = "ff_derive", optional = true }
 
 [dev.dependencies]
 num-bigint = "0.2"

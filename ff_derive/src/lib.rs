@@ -102,10 +102,10 @@ fn fetch_wrapped_ident(body: &syn::Data) -> Option<syn::Ident> {
 /// Fetch an attribute string from the derived struct.
 fn fetch_attr(name: &str, attrs: &[syn::Attribute]) -> Option<String> {
     for attr in attrs {
-        if let Some(meta) = attr.interpret_meta() {
+        if let Ok(meta) = attr.parse_meta() {
             match meta {
                 syn::Meta::NameValue(nv) => {
-                    if nv.ident.to_string() == name {
+                    if nv.path.is_ident(name) {
                         match nv.lit {
                             syn::Lit::Str(ref s) => return Some(s.value()),
                             _ => {
@@ -210,7 +210,7 @@ fn prime_field_repr_impl(repr: &syn::Ident, limbs: usize) -> proc_macro2::TokenS
             }
         }
 
-        impl ::ff::PrimeFieldRepr for #repr {
+        impl crate::ff::PrimeFieldRepr for #repr {
             #[inline(always)]
             fn is_odd(&self) -> bool {
                 self.0[0] & 1 == 1
@@ -319,7 +319,7 @@ fn prime_field_repr_impl(repr: &syn::Ident, limbs: usize) -> proc_macro2::TokenS
                 let mut carry = 0;
 
                 for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
-                    *a = ::ff::adc(*a, *b, &mut carry);
+                    *a = crate::ff::adc(*a, *b, &mut carry);
                 }
             }
 
@@ -328,7 +328,7 @@ fn prime_field_repr_impl(repr: &syn::Ident, limbs: usize) -> proc_macro2::TokenS
                 let mut borrow = 0;
 
                 for (a, b) in self.0.iter_mut().zip(other.0.iter()) {
-                    *a = ::ff::sbb(*a, *b, &mut borrow);
+                    *a = crate::ff::sbb(*a, *b, &mut borrow);
                 }
             }
         }
@@ -440,15 +440,15 @@ fn prime_field_constants_and_sqrt(
     let mod_minus_1_over_2 =
         biguint_to_u64_vec((&modulus - BigUint::from_str("1").unwrap()) >> 1, limbs);
     let legendre_impl = quote!{
-        fn legendre(&self) -> ::ff::LegendreSymbol {
+        fn legendre(&self) -> crate::ff::LegendreSymbol {
             // s = self^((modulus - 1) // 2)
             let s = self.pow(#mod_minus_1_over_2);
             if s == Self::zero() {
-                ::ff::LegendreSymbol::Zero
+                crate::ff::LegendreSymbol::Zero
             } else if s == Self::one() {
-                ::ff::LegendreSymbol::QuadraticResidue
+                crate::ff::LegendreSymbol::QuadraticResidue
             } else {
-                ::ff::LegendreSymbol::QuadraticNonResidue
+                crate::ff::LegendreSymbol::QuadraticNonResidue
             }
         }
     };
@@ -462,7 +462,7 @@ fn prime_field_constants_and_sqrt(
             let rneg = biguint_to_u64_vec(&modulus - &r, limbs);
 
             quote!{
-                impl ::ff::SqrtField for #name {
+                impl crate::ff::SqrtField for #name {
                     #legendre_impl
 
                     fn sqrt(&self) -> Option<Self> {
@@ -489,7 +489,7 @@ fn prime_field_constants_and_sqrt(
             let t = biguint_to_u64_vec(t.clone(), limbs);
 
             quote!{
-                impl ::ff::SqrtField for #name {
+                impl crate::ff::SqrtField for #name {
                     #legendre_impl
 
                     fn sqrt(&self) -> Option<Self> {
@@ -497,9 +497,9 @@ fn prime_field_constants_and_sqrt(
                         // https://eprint.iacr.org/2012/685.pdf (page 12, algorithm 5)
 
                         match self.legendre() {
-                            ::ff::LegendreSymbol::Zero => Some(*self),
-                            ::ff::LegendreSymbol::QuadraticNonResidue => None,
-                            ::ff::LegendreSymbol::QuadraticResidue => {
+                            crate::ff::LegendreSymbol::Zero => Some(*self),
+                            crate::ff::LegendreSymbol::QuadraticNonResidue => None,
+                            crate::ff::LegendreSymbol::QuadraticResidue => {
                                 let mut c = #name(ROOT_OF_UNITY);
                                 let mut r = self.pow(#t_plus_1_over_2);
                                 let mut t = self.pow(#t);
@@ -619,14 +619,14 @@ fn prime_field_impl(
                 gen.extend(quote!{
                     let k = #temp.wrapping_mul(INV);
                     let mut carry = 0;
-                    ::ff::mac_with_carry(#temp, k, MODULUS.0[0], &mut carry);
+                    crate::ff::mac_with_carry(#temp, k, MODULUS.0[0], &mut carry);
                 });
             }
 
             for j in 1..limbs {
                 let temp = get_temp(i + j);
                 gen.extend(quote!{
-                    #temp = ::ff::mac_with_carry(#temp, k, MODULUS.0[#j], &mut carry);
+                    #temp = crate::ff::mac_with_carry(#temp, k, MODULUS.0[#j], &mut carry);
                 });
             }
 
@@ -634,11 +634,11 @@ fn prime_field_impl(
 
             if i == 0 {
                 gen.extend(quote!{
-                    #temp = ::ff::adc(#temp, 0, &mut carry);
+                    #temp = crate::ff::adc(#temp, 0, &mut carry);
                 });
             } else {
                 gen.extend(quote!{
-                    #temp = ::ff::adc(#temp, carry2, &mut carry);
+                    #temp = crate::ff::adc(#temp, carry2, &mut carry);
                 });
             }
 
@@ -672,11 +672,11 @@ fn prime_field_impl(
                 let temp = get_temp(i + j);
                 if i == 0 {
                     gen.extend(quote!{
-                        let #temp = ::ff::mac_with_carry(0, (#a.0).0[#i], (#a.0).0[#j], &mut carry);
+                        let #temp = crate::ff::mac_with_carry(0, (#a.0).0[#i], (#a.0).0[#j], &mut carry);
                     });
                 } else {
                     gen.extend(quote!{
-                        let #temp = ::ff::mac_with_carry(#temp, (#a.0).0[#i], (#a.0).0[#j], &mut carry);
+                        let #temp = crate::ff::mac_with_carry(#temp, (#a.0).0[#i], (#a.0).0[#j], &mut carry);
                     });
                 }
             }
@@ -722,16 +722,16 @@ fn prime_field_impl(
             let temp1 = get_temp(i * 2 + 1);
             if i == 0 {
                 gen.extend(quote!{
-                    let #temp0 = ::ff::mac_with_carry(0, (#a.0).0[#i], (#a.0).0[#i], &mut carry);
+                    let #temp0 = crate::ff::mac_with_carry(0, (#a.0).0[#i], (#a.0).0[#i], &mut carry);
                 });
             } else {
                 gen.extend(quote!{
-                    let #temp0 = ::ff::mac_with_carry(#temp0, (#a.0).0[#i], (#a.0).0[#i], &mut carry);
+                    let #temp0 = crate::ff::mac_with_carry(#temp0, (#a.0).0[#i], (#a.0).0[#i], &mut carry);
                 });
             }
 
             gen.extend(quote!{
-                let #temp1 = ::ff::adc(#temp1, 0, &mut carry);
+                let #temp1 = crate::ff::adc(#temp1, 0, &mut carry);
             });
         }
 
@@ -765,11 +765,11 @@ fn prime_field_impl(
 
                 if i == 0 {
                     gen.extend(quote!{
-                        let #temp = ::ff::mac_with_carry(0, (#a.0).0[#i], (#b.0).0[#j], &mut carry);
+                        let #temp = crate::ff::mac_with_carry(0, (#a.0).0[#i], (#b.0).0[#j], &mut carry);
                     });
                 } else {
                     gen.extend(quote!{
-                        let #temp = ::ff::mac_with_carry(#temp, (#a.0).0[#i], (#b.0).0[#j], &mut carry);
+                        let #temp = crate::ff::mac_with_carry(#temp, (#a.0).0[#i], (#b.0).0[#j], &mut carry);
                     });
                 }
             }
@@ -876,26 +876,26 @@ fn prime_field_impl(
             }
         }
 
-        impl ::ff::PrimeField for #name {
+        impl crate::ff::PrimeField for #name {
             type Repr = #repr;
 
-            fn from_repr(r: #repr) -> Result<#name, ::ff::PrimeFieldDecodingError> {
+            fn from_repr(r: #repr) -> Result<#name, crate::ff::PrimeFieldDecodingError> {
                 let mut r = #name(r);
                 if r.is_valid() {
                     r.mul_assign(&#name(R2));
 
                     Ok(r)
                 } else {
-                    Err(::ff::PrimeFieldDecodingError::NotInField(format!("{}", r.0)))
+                    Err(crate::ff::PrimeFieldDecodingError::NotInField(format!("{}", r.0)))
                 }
             }
 
-            fn from_raw_repr(r: #repr) -> Result<Self, ::ff::PrimeFieldDecodingError> {
+            fn from_raw_repr(r: #repr) -> Result<Self, crate::ff::PrimeFieldDecodingError> {
                 let mut r = #name(r);
                 if r.is_valid() {
                     Ok(r)
                 } else {
-                    Err(::ff::PrimeFieldDecodingError::NotInField(format!("{}", r.0)))
+                    Err(crate::ff::PrimeFieldDecodingError::NotInField(format!("{}", r.0)))
                 }
             }
 
@@ -934,7 +934,7 @@ fn prime_field_impl(
 
         }
 
-        impl ::ff::Field for #name {
+        impl crate::ff::Field for #name {
             #[inline]
             fn zero() -> Self {
                 #name(#repr::from(0))
@@ -1101,13 +1101,13 @@ fn prime_field_impl(
             pub fn to_hex(&self) -> String {
                 let mut buf: Vec<u8> = vec![];
                 self.into_repr().write_be(&mut buf).unwrap();
-                ::ff::hex::encode(&buf)
+                crate::ff::hex::encode(&buf)
             }
 
             pub fn from_hex(value: &str) -> Result<#name, String> {
                 let value = if value.starts_with("0x") { &value[2..] } else { value };
                 if value.len() % 2 != 0 {return Err(format!("hex length must be even for full byte encoding: {}", value))}
-                let mut buf = ::ff::hex::decode(&value).map_err(|_| format!("could not decode hex: {}", value))?;
+                let mut buf = crate::ff::hex::decode(&value).map_err(|_| format!("could not decode hex: {}", value))?;
                 buf.reverse();
                 buf.resize(#limbs * 8, 0);
                 let mut repr = #repr::default();
