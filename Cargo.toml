@@ -18,7 +18,7 @@ exclude = [
 [target.'cfg(not(target_env = "sgx"))'.dependencies]
 sgx_tstd = { version = "1.0.9", git = "https://github.com/baidu/rust-sgx-sdk.git" }
 sgx_rand = { version = "1.0.9", git = "https://github.com/baidu/rust-sgx-sdk.git" }
-hex = { git = "https://github.com/mesalock-linux/rust-hex-sgx.git", rev="281ecff, default-features = false }
+hex = { git = "https://github.com/mesalock-linux/rust-hex-sgx.git", rev="281ecff", default-features = false }
 byteorder = { git = "https://github.com/eduadiez/byteorder.git", rev="f981220" }
 
 [dependencies]
