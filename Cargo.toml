@@ -1,10 +1,11 @@
 [package]
-name = "ff_ce"
+name = "ff_ce-sgx"
 version = "0.8.0"
 authors = ["Sean Bowe <ewillbefull@gmail.com>",
     "Alex Gluchowski <alex@gluchowski.net>",
-    "Alex Vlasov <alex.m.vlasov@gmail.com>"]
-description = "Library for building and interfacing with finite fields"
+    "Alex Vlasov <alex.m.vlasov@gmail.com>",
+    "Eduardo Antuña <eduadiez@gmail.com>"]
+description = "Library for building and interfacing with finite fields [SGX version]"
 documentation = "https://docs.rs/ff/"
 homepage = "https://github.com/matter-labs/ff"
 license = "MIT/Apache-2.0"
@@ -16,10 +17,10 @@ exclude = [
 ]
 
 [target.'cfg(not(target_env = "sgx"))'.dependencies]
-sgx_tstd = { version = "1.0.9", git = "https://github.com/baidu/rust-sgx-sdk.git" }
-sgx_rand = { version = "1.0.9", git = "https://github.com/baidu/rust-sgx-sdk.git" }
+sgx_tstd = { version = "1.0.9" }
+sgx_rand = { version = "1.0.9" }
+byteorder = { package = "byteorder-sgx", version = "0.0.1" }
 hex = { git = "https://github.com/mesalock-linux/rust-hex-sgx.git", rev="281ecff", default-features = false }
-byteorder = { git = "https://github.com/eduadiez/byteorder.git", rev="f981220" }
 
 [dependencies]
 ff_derive_ce = { version = "0.6", path = "ff_derive", optional = true }
