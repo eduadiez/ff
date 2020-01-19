@@ -17,8 +17,8 @@ exclude = [
 ]
 
 [target.'cfg(not(target_env = "sgx"))'.dependencies]
-sgx_tstd = { version = "1.0.9" }
-sgx_rand = { version = "1.0.9" }
+sgx_tstd = { version = "1.1.0" }
+sgx_rand = { version = "1.1.0" }
 byteorder = { package = "byteorder-sgx", version = "0.0.1" }
 hex = { git = "https://github.com/mesalock-linux/rust-hex-sgx.git", rev="281ecff", default-features = false }
 
