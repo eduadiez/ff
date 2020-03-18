@@ -23,7 +23,7 @@ byteorder = { tag = "sgx_1.1.0", git = "https://github.com/mesalock-linux/byteor
 hex = { tag = "sgx_1.1.0", git = "https://github.com/mesalock-linux/rust-hex-sgx.git" }
 ff_derive_ce = { version = "0.6", path = "ff_derive", optional = true }
 
-[patch.'https://github.com/apache/incubator-teaclave-sgx-sdk.git']
+[patch.'https://github.com/apache/teaclave-sgx-sdk.git']
 sgx_tstd = { version = "1.1.0", git = "https://github.com/apache/incubator-teaclave-sgx-sdk.git" }
 
 [dev.dependencies]
