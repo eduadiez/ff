@@ -3,13 +3,19 @@
 // #![feature(test)]
 // mod tests;
 
-#![cfg_attr(not(target_env = "sgx"), no_std)]
+#![cfg_attr(any(not(feature = "std"),
+                all(feature = "mesalock_sgx",
+                    not(target_env = "sgx"))), no_std)]
+#![cfg_attr(all(target_env = "sgx", target_vendor = "mesalock"), feature(rustc_private))]
 
+
+#[cfg(all(feature = "mesalock_sgx", not(target_env = "sgx")))]
 extern crate sgx_tstd as std;
+extern crate sgx_rand as rand;
+
 use std::string::String;
 
 extern crate byteorder;
-extern crate sgx_rand as rand;
 extern crate hex as hex_ext;
 pub mod hex {
     pub use hex_ext::*;
@@ -151,44 +157,44 @@ pub trait PrimeFieldRepr:
     fn shl(&mut self, amt: u32);
 
     /// Writes this `PrimeFieldRepr` as a big endian integer.
-    fn write_be<W: byteorder::WriteBytesExt>(&self, mut writer: W) -> io::Result<()> {
+    fn write_be<W: Write>(&self, mut writer: W) -> io::Result<()> {
         use byteorder::{BigEndian, WriteBytesExt};
 
         for digit in self.as_ref().iter().rev() {
-            writer.write_u64::<BigEndian>(*digit).unwrap();
+            writer.write_u64::<BigEndian>(*digit)?;
         }
 
         Ok(())
     }
 
     /// Reads a big endian integer into this representation.
-    fn read_be<R: byteorder::ReadBytesExt>(&mut self, mut reader: R) -> io::Result<()> {
+    fn read_be<R: Read>(&mut self, mut reader: R) -> io::Result<()> {
         use byteorder::{BigEndian, ReadBytesExt};
 
         for digit in self.as_mut().iter_mut().rev() {
-            *digit = reader.read_u64::<BigEndian>().unwrap();
+            *digit = reader.read_u64::<BigEndian>()?;
         }
 
         Ok(())
     }
 
     /// Writes this `PrimeFieldRepr` as a little endian integer.
-    fn write_le<W: byteorder::WriteBytesExt>(&self, mut writer: W) -> io::Result<()> {
+    fn write_le<W: Write>(&self, mut writer: W) -> io::Result<()> {
         use byteorder::{LittleEndian, WriteBytesExt};
 
         for digit in self.as_ref().iter() {
-            writer.write_u64::<LittleEndian>(*digit).unwrap();
+            writer.write_u64::<LittleEndian>(*digit)?;
         }
 
         Ok(())
     }
 
     /// Reads a little endian integer into this representation.
-    fn read_le<R: byteorder::ReadBytesExt>(&mut self, mut reader: R) -> io::Result<()> {
+    fn read_le<R: Read>(&mut self, mut reader: R) -> io::Result<()> {
         use byteorder::{LittleEndian, ReadBytesExt};
 
         for digit in self.as_mut().iter_mut() {
-            *digit = reader.read_u64::<LittleEndian>().unwrap();
+            *digit = reader.read_u64::<LittleEndian>()?;
         }
 
         Ok(())
