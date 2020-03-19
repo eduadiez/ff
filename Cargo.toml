@@ -1,15 +1,14 @@
 [package]
-name = "ff_ce-sgx"
+name = "ff_ce"
 version = "0.8.0"
 authors = ["Sean Bowe <ewillbefull@gmail.com>",
     "Alex Gluchowski <alex@gluchowski.net>",
-    "Alex Vlasov <alex.m.vlasov@gmail.com>",
-    "Eduardo Antuña <eduadiez@gmail.com>"]
-description = "Library for building and interfacing with finite fields [SGX version]"
+    "Alex Vlasov <alex.m.vlasov@gmail.com>"]
+description = "Library for building and interfacing with finite fields"
 documentation = "https://docs.rs/ff/"
-homepage = "https://github.com/eduadiez/ff_ce-sgx"
+homepage = "https://github.com/matter-labs/ff"
 license = "MIT/Apache-2.0"
-repository = "https://github.com/eduadiez/ff_ce-sgx"
+repository = "https://github.com/matter-labs/ff"
 edition = "2018"
 exclude = [
     "ff_derive_const",
@@ -17,14 +16,16 @@ exclude = [
 ]
 
 [dependencies]
-sgx_tstd = { version = "1.1.0", optional = true }
-sgx_rand = { version = "1.1.0" }
+hex = { tag = "sgx_1.1.0", git = "https://github.com/mesalock-linux/rust-hex-sgx.git"}
 byteorder = { tag = "sgx_1.1.0", git = "https://github.com/mesalock-linux/byteorder-sgx.git" }
-hex = { tag = "sgx_1.1.0", git = "https://github.com/mesalock-linux/rust-hex-sgx.git" }
 ff_derive_ce = { version = "0.6", path = "ff_derive", optional = true }
 
+[target.'cfg(not(target_env = "sgx"))'.dependencies]
+sgx_tstd = { version = "1.1.0", optional = true }
+sgx_rand = { version = "1.1.0" }
+
 [patch.'https://github.com/apache/teaclave-sgx-sdk.git']
-sgx_tstd = { version = "1.1.0", git = "https://github.com/apache/incubator-teaclave-sgx-sdk.git" }
+sgx_tstd = { version = "1.1.0" }
 
 [dev.dependencies]
 num-bigint = "0.2"
@@ -32,7 +33,7 @@ num-traits = "0.2"
 num-integer = "0.1"
 
 [features]
-default = ["mesalock_sgx"]
+default = ["std","mesalock_sgx"]
 std = ["mesalock_sgx"]
 mesalock_sgx = ["std", "sgx_tstd"]
 derive = ["ff_derive_ce"]
